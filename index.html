@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seguimiento de Patrullas - Sistema de Gestión</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- LOGIN SCREEN -->
+  <div id="loginScreen" class="login-overlay">
+    <div class="login-box">
+      <div class="login-header">
+        <svg class="login-owl" viewBox="0 0 100 100" width="72" height="72" fill="none">
+          <ellipse cx="50" cy="60" rx="32" ry="30" fill="#1a237e"/>
+          <ellipse cx="50" cy="55" rx="28" ry="22" fill="#283593"/>
+          <circle cx="35" cy="42" r="10" fill="#fff"/>
+          <circle cx="65" cy="42" r="10" fill="#fff"/>
+          <circle cx="37" cy="42" r="5" fill="#1a237e"/>
+          <circle cx="63" cy="42" r="5" fill="#1a237e"/>
+          <circle cx="38" cy="41" r="2" fill="#fff"/>
+          <circle cx="64" cy="41" r="2" fill="#fff"/>
+          <polygon points="44,55 50,62 56,55" fill="#f57f17"/>
+          <line x1="50" y1="62" x2="50" y2="50" stroke="#f57f17" stroke-width="3" stroke-linecap="round"/>
+          <rect x="44" y="68" width="12" height="4" rx="2" fill="#e65100"/>
+          <line x1="28" y1="70" x2="20" y2="78" stroke="#1a237e" stroke-width="2" stroke-linecap="round"/>
+          <line x1="72" y1="70" x2="80" y2="78" stroke="#1a237e" stroke-width="2" stroke-linecap="round"/>
+          <ellipse cx="50" cy="72" rx="20" ry="4" fill="#e8eaf6" opacity=".3"/>
+        </svg>
+        <h2>Seguimiento de Patrullas</h2>
+        <p>Acceso al Sistema</p>
+      </div>
+      <form id="loginForm" class="login-form" autocomplete="off">
+        <div class="login-field">
+          <label for="loginUser"><i class="fas fa-user-astronaut"></i> Usuario</label>
+          <input type="text" id="loginUser" placeholder="Ingrese su usuario" required>
+        </div>
+        <div class="login-field">
+          <label for="loginPass"><i class="fas fa-fingerprint"></i> Contraseña</label>
+          <input type="password" id="loginPass" placeholder="Ingrese su contraseña" required>
+        </div>
+        <div id="loginError" class="login-error hidden">
+          <i class="fas fa-exclamation-circle"></i> Usuario o contraseña incorrectos
+        </div>
+        <button type="submit" class="btn-login">
+          <i class="fas fa-arrow-right-to-bracket"></i> Ingresar
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="app-container" id="appContainer" style="display:none">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <i class="fas fa-satellite-dish"></i>
+        <h2>Seguimiento<br><span>de Patrullas</span></h2>
+      </div>
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-item" data-section="expedientes">
+          <i class="fas fa-diagram-project"></i>
+          <span>Expedientes</span>
+        </a>
+        <a href="#" class="nav-item" data-section="patrulla">
+          <i class="fas fa-gauge-high"></i>
+          <span>Patrulla</span>
+        </a>
+        <div class="nav-divider">INFORMES</div>
+        <a href="#" class="nav-item" data-section="contacto">
+          <i class="fas fa-address-card"></i>
+          <span>Informe de Contacto</span>
+        </a>
+        <a href="#" class="nav-item" data-section="diligencia">
+          <i class="fas fa-file-pen"></i>
+          <span>Informe de Diligencia</span>
+        </a>
+        <a href="#" class="nav-item" data-section="reconocimiento">
+          <i class="fas fa-compass"></i>
+          <span>Informe de Reconocimiento</span>
+        </a>
+        <a href="#" class="nav-item" data-section="vigilancia">
+          <i class="fas fa-radar"></i>
+          <span>Informe de Vigilancia</span>
+        </a>
+        <a href="#" class="nav-item" data-section="seguridad">
+          <i class="fas fa-fingerprint"></i>
+          <span>Informe de Seguridad</span>
+        </a>
+        <div class="nav-divider">MÓDULOS</div>
+        <a href="#" class="nav-item" data-section="consultas">
+          <i class="fas fa-magnifying-glass"></i>
+          <span>Consultas</span>
+        </a>
+        <a href="#" class="nav-item" data-section="dashboard">
+          <i class="fas fa-chart-line"></i>
+          <span>Dashboard</span>
+        </a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="btnExportar" class="btn-export" title="Exportar todos los datos">
+          <i class="fas fa-cloud-arrow-down"></i> Exportar
+        </button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <button id="btnMenu" class="btn-menu">
+          <i class="fas fa-bars"></i>
+        </button>
+        <h1 id="sectionTitle">Expedientes</h1>
+        <div class="topbar-right">
+          <span id="clock"></span>
+          <button id="btnLogout" class="btn-logout" title="Cerrar Sesión"><i class="fas fa-sign-out-alt"></i></button>
+        </div>
+      </header>
+
+      <div class="content-area">
+        <!-- PATRULLA -->
+        <section id="section-patrulla" class="section">
+          <div class="section-header-row">
+            <h2><i class="fas fa-gauge-high"></i> Patrullas</h2>
+          </div>
+          <div class="patrulla-grid" id="patrulla-buttons"></div>
+          <div id="patrulla-exp-list" style="display:none">
+            <div class="patrulla-exp-header" id="patrulla-exp-header">
+              <button class="btn-secondary" id="btnVolverPatrulla"><i class="fas fa-arrow-left"></i> Volver</button>
+              <h3 id="patrulla-title"></h3>
+              <button class="btn-primary" id="btnNuevoDesdePatrulla"><i class="fas fa-plus"></i> Nuevo Expediente</button>
+            </div>
+            <div id="patrulla-exp-body"></div>
+          </div>
+        </section>
+
+        <!-- EXPEDIENTES -->
+        <section id="section-expedientes" class="section active">
+          <div class="section-header-row">
+            <h2><i class="fas fa-diagram-project"></i> Expedientes</h2>
+            <button class="btn-primary" id="btnNuevoExpediente"><i class="fas fa-plus"></i> Nuevo Expediente (Contacto)</button>
+          </div>
+          <div id="expedientes-list"></div>
+        </section>
+
+        <!-- INFORME DE CONTACTO -->
+        <section id="section-contacto" class="section">
+          <div class="form-container">
+            <div class="form-header">
+              <i class="fas fa-address-card"></i>
+              <div>
+                <h2>Informe de Contacto</h2>
+                <span class="form-subtitle">Paso 1 — Inicia un nuevo Expediente</span>
+              </div>
+            </div>
+            <form id="formContacto" class="form">
+              <div id="cont-info-box" class="form-group info-box info-blue">
+                <i class="fas fa-info-circle"></i>
+                <span>Al guardar este informe se creará automáticamente un <strong>nuevo Expediente</strong>.</span>
+              </div>
+              <div class="form-group">
+                <label for="cont-exp-nombre">Nombre del Expediente</label>
+                <input type="text" id="cont-exp-nombre" name="cont-exp-nombre" placeholder="Ej: Operativo Centro 2024" required>
+              </div>
+              <div class="form-group">
+                <label for="cont-titulo">Título</label>
+                <input type="text" id="cont-titulo" name="cont-titulo" placeholder="Ej: Contacto inicial con testigo" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="cont-nro">N°</label>
+                  <input type="text" id="cont-nro" name="cont-nro" placeholder="Número de identificación del contacto" required>
+                </div>
+                <div class="form-group">
+                  <label for="cont-fecha">Fecha</label>
+                  <input type="date" id="cont-fecha" name="cont-fecha" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="cont-descripcion">Descripción</label>
+                <textarea id="cont-descripcion" name="cont-descripcion" rows="5" placeholder="Describa los detalles del contacto..." required></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar Informe</button>
+                <button type="reset" class="btn-secondary"><i class="fas fa-eraser"></i> Limpiar</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- INFORME DE DILIGENCIA -->
+        <section id="section-diligencia" class="section">
+          <div class="form-container">
+            <div class="form-header">
+              <i class="fas fa-file-pen"></i>
+              <div>
+                <h2>Informe de Diligencia</h2>
+                <span class="form-subtitle">Paso 2 — Vincular a un Expediente existente</span>
+              </div>
+            </div>
+            <form id="formDiligencia" class="form">
+              <div class="form-group">
+                <label for="diligencia-caso">Expediente</label>
+                <select id="diligencia-caso" name="diligencia-caso" required>
+                  <option value="">Seleccione un Expediente...</option>
+                </select>
+              </div>
+              <div id="dil-items-container">
+                <div class="dil-item">
+                  <div class="item-header">
+                    <span class="item-num">Archivo #1</span>
+                    <button type="button" class="btn-remove-item" title="Eliminar este archivo" style="display:none"><i class="fas fa-times"></i></button>
+                  </div>
+                  <div class="form-group">
+                    <label>Título</label>
+                    <input type="text" name="dil-titulo" placeholder="Título de la diligencia" required>
+                  </div>
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>N°</label>
+                      <input type="text" name="dil-nro" placeholder="Número de caso / radicado" required>
+                    </div>
+                    <div class="form-group">
+                      <label>Fecha</label>
+                      <input type="date" name="dil-fecha" required>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label>Descripción</label>
+                    <textarea name="dil-descripcion" rows="3" placeholder="Describa los detalles de la diligencia..." required></textarea>
+                  </div>
+                </div>
+              </div>
+              <button type="button" id="btnAddDiligencia" class="btn-secondary"><i class="fas fa-plus"></i> Agregar otro archivo</button>
+              <div class="form-actions form-actions-dil">
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar Todos</button>
+                <button type="reset" class="btn-secondary"><i class="fas fa-eraser"></i> Limpiar</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- INFORME DE RECONOCIMIENTO -->
+        <section id="section-reconocimiento" class="section">
+          <div class="form-container">
+            <div class="form-header">
+              <i class="fas fa-compass"></i>
+              <div>
+                <h2>Informe de Reconocimiento</h2>
+                <span class="form-subtitle">Paso 3 — Vincular a un Expediente existente</span>
+              </div>
+            </div>
+            <form id="formReconocimiento" class="form">
+              <div class="form-group">
+                <label for="reconocimiento-caso">Expediente</label>
+                <select id="reconocimiento-caso" name="reconocimiento-caso">
+                  <option value="">Seleccione un Expediente...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="rec-titulo">Título</label>
+                <input type="text" id="rec-titulo" name="rec-titulo" placeholder="Título del reconocimiento">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="rec-nro">N°</label>
+                  <input type="text" id="rec-nro" name="rec-nro" placeholder="Número de identificación del reconocimiento">
+                </div>
+                <div class="form-group">
+                  <label for="rec-fecha">Fecha</label>
+                  <input type="date" id="rec-fecha" name="rec-fecha">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="rec-descripcion">Descripción</label>
+                <textarea id="rec-descripcion" name="rec-descripcion" rows="5" placeholder="Describa los detalles del reconocimiento (opcional)"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar Informe</button>
+                <button type="reset" class="btn-secondary"><i class="fas fa-eraser"></i> Limpiar</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- INFORME DE VIGILANCIA -->
+        <section id="section-vigilancia" class="section">
+          <div class="form-container">
+            <div class="form-header">
+              <i class="fas fa-radar"></i>
+              <div>
+                <h2>Informe de Vigilancia</h2>
+                <span class="form-subtitle">Paso 4 — Vincular a un Expediente existente</span>
+              </div>
+            </div>
+            <form id="formVigilancia" class="form">
+              <div class="form-group">
+                <label for="vigilancia-caso">Expediente</label>
+                <select id="vigilancia-caso" name="vigilancia-caso">
+                  <option value="">Seleccione un Expediente...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="vig-titulo">Título</label>
+                <input type="text" id="vig-titulo" name="vig-titulo" placeholder="Título de la vigilancia">
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="vig-nro">N°</label>
+                  <input type="text" id="vig-nro" name="vig-nro" placeholder="Número de identificación de la vigilancia">
+                </div>
+                <div class="form-group">
+                  <label for="vig-fecha">Fecha</label>
+                  <input type="date" id="vig-fecha" name="vig-fecha">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="vig-descripcion">Descripción</label>
+                <textarea id="vig-descripcion" name="vig-descripcion" rows="5" placeholder="Describa los detalles de la vigilancia (opcional)"></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar Informe</button>
+                <button type="reset" class="btn-secondary"><i class="fas fa-eraser"></i> Limpiar</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- INFORME DE SEGURIDAD -->
+        <section id="section-seguridad" class="section">
+          <div class="form-container">
+            <div class="form-header">
+              <i class="fas fa-fingerprint"></i>
+              <div>
+                <h2>Informe de Seguridad</h2>
+                <span class="form-subtitle">Paso 5 — Finaliza un Expediente</span>
+              </div>
+            </div>
+            <form id="formSeguridad" class="form">
+              <div class="form-group">
+                <label for="seguridad-caso">Expediente</label>
+                <select id="seguridad-caso" name="seguridad-caso" required>
+                  <option value="">Seleccione un Expediente...</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="seg-titulo">Título</label>
+                <input type="text" id="seg-titulo" name="seg-titulo" placeholder="Título del informe de seguridad" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="seg-nro">N°</label>
+                  <input type="text" id="seg-nro" name="seg-nro" placeholder="Número de identificación del informe" required>
+                </div>
+                <div class="form-group">
+                  <label for="seg-fecha">Fecha</label>
+                  <input type="date" id="seg-fecha" name="seg-fecha" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="seg-descripcion">Descripción</label>
+                <textarea id="seg-descripcion" name="seg-descripcion" rows="5" placeholder="Describa los detalles del evento de seguridad..." required></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Guardar Informe</button>
+                <button type="button" id="btnSegPendiente" class="btn-warning"><i class="fas fa-clock"></i> Pendiente</button>
+                <button type="reset" class="btn-secondary"><i class="fas fa-eraser"></i> Limpiar</button>
+              </div>
+            </form>
+          </div>
+        </section>
+
+        <!-- CONSULTAS -->
+        <section id="section-consultas" class="section">
+          <div class="form-container">
+            <div class="form-header">
+              <i class="fas fa-magnifying-glass"></i>
+              <h2>Consultas</h2>
+            </div>
+            <div class="filters">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="cons-tipo">Tipo de Informe</label>
+                  <select id="cons-tipo">
+                    <option value="todos">Todos</option>
+                    <option value="contacto">Contacto</option>
+                    <option value="diligencia">Diligencia</option>
+                    <option value="reconocimiento">Reconocimiento</option>
+                    <option value="vigilancia">Vigilancia</option>
+                    <option value="seguridad">Seguridad</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="cons-fecha-ini">Fecha Desde</label>
+                  <input type="date" id="cons-fecha-ini">
+                </div>
+                <div class="form-group">
+                  <label for="cons-fecha-fin">Fecha Hasta</label>
+                  <input type="date" id="cons-fecha-fin">
+                </div>
+                <div class="form-group">
+                  <label for="cons-busqueda">Buscar</label>
+                  <input type="text" id="cons-busqueda" placeholder="Palabra clave...">
+                </div>
+              </div>
+              <div class="form-actions">
+                <button id="btnConsultar" class="btn-primary"><i class="fas fa-magnifying-glass"></i> Consultar</button>
+                <button id="btnLimpiarFiltros" class="btn-secondary"><i class="fas fa-times"></i> Limpiar Filtros</button>
+              </div>
+            </div>
+            <div class="table-container">
+              <table class="data-table" id="tablaConsultas">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Tipo</th>
+                    <th>Expediente</th>
+                    <th>Fecha</th>
+                    <th>Hora</th>
+                    <th>Ubicación</th>
+                    <th>Resumen</th>
+                    <th>Ver</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyConsultas">
+                  <tr>
+                    <td colspan="8" class="empty-msg">Realice una consulta para ver resultados</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- DASHBOARD -->
+        <section id="section-dashboard" class="section">
+          <div class="dashboard-cards">
+            <div class="card card-dark clickable-card" data-filtro="todos">
+              <div class="card-icon"><i class="fas fa-diagram-project"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-expedientes">0</span>
+                <span class="card-label">Expedientes</span>
+              </div>
+            </div>
+            <div class="card card-warning clickable-card" data-filtro="pendientes">
+              <div class="card-icon"><i class="fas fa-clock"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-pendientes">0</span>
+                <span class="card-label">Pendientes</span>
+              </div>
+            </div>
+            <div class="card card-success clickable-card" data-filtro="finalizados">
+              <div class="card-icon"><i class="fas fa-check-double"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-finalizados">0</span>
+                <span class="card-label">Finalizados</span>
+              </div>
+            </div>
+            <div class="card card-primary clickable-card" data-filtro="contacto">
+              <div class="card-icon"><i class="fas fa-address-card"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-contacto">0</span>
+                <span class="card-label">Contactos</span>
+              </div>
+            </div>
+            <div class="card card-success clickable-card" data-filtro="diligencia">
+              <div class="card-icon"><i class="fas fa-file-pen"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-diligencia">0</span>
+                <span class="card-label">Diligencias</span>
+              </div>
+            </div>
+            <div class="card card-info clickable-card" data-filtro="reconocimiento">
+              <div class="card-icon"><i class="fas fa-compass"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-reconocimiento">0</span>
+                <span class="card-label">Reconocimientos</span>
+              </div>
+            </div>
+            <div class="card card-warning clickable-card" data-filtro="vigilancia">
+              <div class="card-icon"><i class="fas fa-radar"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-vigilancia">0</span>
+                <span class="card-label">Vigilancias</span>
+              </div>
+            </div>
+            <div class="card card-danger clickable-card" data-filtro="seguridad">
+              <div class="card-icon"><i class="fas fa-fingerprint"></i></div>
+              <div class="card-info">
+                <span class="card-number" id="count-seguridad">0</span>
+                <span class="card-label">Seguridad</span>
+              </div>
+            </div>
+          </div>
+          <div class="charts-grid">
+            <div class="chart-box full-width">
+              <div class="dash-crono-header">
+                <h3><i class="fas fa-list-ol"></i> Archivos por N° (Cronológico)</h3>
+                <button id="btnCronologico" class="btn-primary"><i class="fas fa-sync-alt"></i> Cargar todo</button>
+                <span id="crono-filtro-label" class="crono-filtro-label"></span>
+              </div>
+              <div class="table-container" id="cronologico-container" style="display:none">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Tipo</th>
+                      <th>Expediente</th>
+                      <th>N°</th>
+                      <th>Fecha</th>
+                      <th>Título</th>
+                      <th>Ver</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tbodyCronologico"></tbody>
+                </table>
+              </div>
+            </div>
+            <div class="chart-box full-width">
+              <h3><i class="fas fa-chart-bar"></i> Informes por Tipo</h3>
+              <canvas id="chartTipo"></canvas>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Confirmación -->
+  <div id="modalConfirm" class="modal-overlay hidden">
+    <div class="modal-box">
+      <div class="modal-header">
+        <i class="fas fa-check-circle"></i>
+        <h3 id="modalConfirmTitle">Informe Guardado</h3>
+      </div>
+      <div class="modal-body">
+        <p id="modalConfirmMsg">El informe se ha guardado correctamente.</p>
+      </div>
+      <div class="modal-footer">
+        <button id="btnModalOk" class="btn-primary">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Vista Previa -->
+  <div id="modalPreview" class="modal-overlay hidden">
+    <div class="modal-box modal-lg">
+      <div class="modal-header">
+        <i class="fas fa-file-alt"></i>
+        <h3 id="previewTitle">Detalle del Informe</h3>
+        <button id="btnPreviewClose" class="btn-close">&times;</button>
+      </div>
+      <div class="modal-body" id="previewBody"></div>
+      <div class="modal-footer">
+        <button id="btnPreviewCerrar" class="btn-secondary">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

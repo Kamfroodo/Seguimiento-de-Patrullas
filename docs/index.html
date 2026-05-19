@@ -48,32 +48,6 @@
           <i class="fas fa-arrow-right-to-bracket"></i> Ingresar
         </button>
       </form>
-      <div class="login-register-link">
-        <button id="btnToggleRegister" class="btn-link"><i class="fas fa-user-plus"></i> Crear nuevo usuario</button>
-      </div>
-      <div id="registerSection" class="register-section hidden">
-        <div class="register-divider"><span>REGISTRO</span></div>
-        <form id="registerForm" class="login-form" autocomplete="off">
-          <div class="login-field">
-            <label for="regUser"><i class="fas fa-user-astronaut"></i> Nuevo Usuario</label>
-            <input type="text" id="regUser" placeholder="Nombre de usuario" required>
-          </div>
-          <div class="login-field">
-            <label for="regPass"><i class="fas fa-fingerprint"></i> Contraseña</label>
-            <input type="password" id="regPass" placeholder="Contraseña" required>
-          </div>
-          <div class="login-field">
-            <label for="regPassConfirm"><i class="fas fa-check-circle"></i> Confirmar Contraseña</label>
-            <input type="password" id="regPassConfirm" placeholder="Repita la contraseña" required>
-          </div>
-          <div id="registerError" class="login-error hidden">
-            <i class="fas fa-exclamation-circle"></i> <span id="registerErrorMsg">Error</span>
-          </div>
-          <button type="submit" class="btn-login btn-register">
-            <i class="fas fa-user-check"></i> Crear Usuario
-          </button>
-        </form>
-      </div>
     </div>
   </div>
 
@@ -544,6 +518,34 @@
             <div class="chart-box full-width">
               <h3><i class="fas fa-chart-bar"></i> Informes por Tipo</h3>
               <canvas id="chartTipo"></canvas>
+            </div>
+          </div>
+          <!-- USER MANAGEMENT (admin only) -->
+          <div id="userManagement" class="user-mgmt" style="display:none">
+            <div class="form-container" style="margin-top:24px">
+              <div class="form-header">
+                <i class="fas fa-users-gear"></i>
+                <div>
+                  <h2>Gestión de Usuarios</h2>
+                  <span class="form-subtitle">Administrar usuarios del sistema</span>
+                </div>
+              </div>
+              <div id="usersTableContainer" class="table-container">
+                <table class="data-table" id="usersTable">
+                  <thead>
+                    <tr>
+                      <th>Usuario</th>
+                      <th>Rol</th>
+                      <th>Patrulla</th>
+                      <th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody id="usersTableBody"></tbody>
+                </table>
+              </div>
+              <div class="form-actions">
+                <button id="btnAddUser" class="btn-primary"><i class="fas fa-user-plus"></i> Agregar Usuario</button>
+              </div>
             </div>
           </div>
         </section>

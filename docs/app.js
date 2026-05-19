@@ -16,19 +16,22 @@
     let users = getUsers();
     if (users.length === 0) {
       users = [{ user: 'SECCION I', pass: 'SECCI2026', isAdmin: true }];
+      for (let n = 1; n <= 7; n++) {
+        users.push({ user: String(n), pass: 'secci2026', isAdmin: false, patrulla: n });
+      }
       setUsers(users);
     }
   }
 
-  function addUser(user, pass) {
+  function addUser(user, pass, patrulla) {
     const users = getUsers();
-    users.push({ user, pass, isAdmin: false });
+    users.push({ user, pass, isAdmin: false, patrulla: patrulla || null });
     setUsers(users);
   }
 
-  function validateUser(user, pass) {
+  function findUser(user, pass) {
     const users = getUsers();
-    return users.some(u => u.user === user && u.pass === pass);
+    return users.find(u => u.user === user && u.pass === pass) || null;
   }
 
   function userExists(user) {
@@ -38,9 +41,18 @@
 
   initUsers();
 
+  function getCurrentPatrulla() {
+    const val = sessionStorage.getItem('sp_patrulla');
+    return val ? parseInt(val) : null;
+  }
+
+  function isAdmin() {
+    return sessionStorage.getItem('sp_admin') === '1';
+  }
+
   function checkAuth() {
     const loggedIn = sessionStorage.getItem('sp_logged_in');
-    if (loggedIn === '1') {
+    if (loggedIn) {
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appContainer').style.display = '';
       return true;
@@ -58,11 +70,15 @@
     const pass = document.getElementById('loginPass').value;
     const errEl = document.getElementById('loginError');
 
-    if (validateUser(user, pass)) {
-      sessionStorage.setItem('sp_logged_in', '1');
+    const found = findUser(user, pass);
+    if (found) {
+      sessionStorage.setItem('sp_logged_in', found.user);
+      sessionStorage.setItem('sp_admin', found.isAdmin ? '1' : '0');
+      sessionStorage.setItem('sp_patrulla', found.patrulla ? String(found.patrulla) : '');
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appContainer').style.display = '';
       errEl.classList.add('hidden');
+      updateSidebarForUser();
     } else {
       errEl.classList.remove('hidden');
       document.getElementById('loginPass').value = '';
@@ -72,67 +88,39 @@
 
   document.getElementById('btnLogout').addEventListener('click', function () {
     sessionStorage.removeItem('sp_logged_in');
+    sessionStorage.removeItem('sp_admin');
+    sessionStorage.removeItem('sp_patrulla');
     location.reload();
   });
 
-  // ---------- REGISTER ----------
-  document.getElementById('btnToggleRegister').addEventListener('click', function () {
-    const section = document.getElementById('registerSection');
-    section.classList.toggle('hidden');
-    document.getElementById('registerError').classList.add('hidden');
-  });
-
-  document.getElementById('registerForm').addEventListener('submit', function (e) {
-    e.preventDefault();
-    const user = document.getElementById('regUser').value.trim();
-    const pass = document.getElementById('regPass').value;
-    const confirm = document.getElementById('regPassConfirm').value;
-    const errEl = document.getElementById('registerError');
-    const errMsg = document.getElementById('registerErrorMsg');
-
-    errEl.classList.add('hidden');
-
-    if (!user || !pass || !confirm) {
-      errMsg.textContent = 'Todos los campos son obligatorios.';
-      errEl.classList.remove('hidden');
-      return;
+  // ---------- SIDEBAR USER ADAPTATION ----------
+  function updateSidebarForUser() {
+    const pat = getCurrentPatrulla();
+    const admin = isAdmin();
+    const patItem = document.querySelector('.nav-item[data-section="patrulla"]');
+    if (patItem) {
+      if (admin) {
+        patItem.innerHTML = '<i class="fas fa-gauge-high"></i> <span>Patrulla</span>';
+      } else {
+        patItem.innerHTML = `<i class="fas fa-gauge-high"></i> <span>Patrulla N° ${pat}</span>`;
+      }
     }
-
-    if (pass !== confirm) {
-      errMsg.textContent = 'Las contraseñas no coinciden.';
-      errEl.classList.remove('hidden');
-      document.getElementById('regPass').value = '';
-      document.getElementById('regPassConfirm').value = '';
-      document.getElementById('regPass').focus();
-      return;
+    // Hide volver button for patrol users
+    const btnVolver = document.getElementById('btnVolverPatrulla');
+    if (btnVolver) {
+      btnVolver.style.display = admin ? '' : 'none';
     }
-
-    if (pass.length < 4) {
-      errMsg.textContent = 'La contraseña debe tener al menos 4 caracteres.';
-      errEl.classList.remove('hidden');
-      return;
+    // Hide nuevo expediente button for patrol users
+    const btnNuevo = document.getElementById('btnNuevoExpediente');
+    if (btnNuevo) {
+      btnNuevo.style.display = admin ? '' : 'none';
     }
-
-    if (userExists(user)) {
-      errMsg.textContent = 'El usuario ya existe.';
-      errEl.classList.remove('hidden');
-      return;
+    // Hide export button for patrol users
+    const btnExport = document.getElementById('btnExportar');
+    if (btnExport) {
+      btnExport.style.display = admin ? '' : 'none';
     }
-
-    addUser(user, pass);
-
-    // Auto-fill login form
-    document.getElementById('loginUser').value = user;
-    document.getElementById('loginPass').value = '';
-
-    document.getElementById('registerSection').classList.add('hidden');
-    document.getElementById('regUser').value = '';
-    document.getElementById('regPass').value = '';
-    document.getElementById('regPassConfirm').value = '';
-    document.getElementById('loginPass').focus();
-
-    alert(`Usuario "${user}" creado exitosamente. Ahora puede iniciar sesión.`);
-  });
+  }
 
   // ---------- CONSTANTS ----------
   const STORE = {
@@ -189,6 +177,13 @@
   function getCasos() { return getData(CASOS_KEY); }
   function setCasos(list) { setData(CASOS_KEY, list); }
 
+  function getCasosFiltered() {
+    const all = getCasos();
+    const pat = getCurrentPatrulla();
+    if (pat) return all.filter(c => c.patrulla === pat);
+    return all;
+  }
+
   function genId() {
     return Date.now().toString(36).toUpperCase() + Math.random().toString(36).substr(2, 4).toUpperCase();
   }
@@ -244,7 +239,12 @@
     const activeSection = document.getElementById(`section-${sectionId}`);
     if (activeSection) activeSection.classList.add('active');
 
-    sectionTitle.textContent = SECTION_NAMES[sectionId] || 'Dashboard';
+    const pat = getCurrentPatrulla();
+    if (sectionId === 'patrulla' && pat) {
+      sectionTitle.textContent = `Patrulla N° ${pat}`;
+    } else {
+      sectionTitle.textContent = SECTION_NAMES[sectionId] || 'Dashboard';
+    }
 
     if (sectionId === 'dashboard') updateDashboard();
     if (sectionId === 'expedientes') renderExpedientes();
@@ -399,7 +399,7 @@
       if (tipo === 'contacto') {
         // Create new case
         const nombreExp = entry['cont-exp-nombre'] || entry['cont-titulo'] || entry['cont-nro'] || shortId();
-        const patrullaAsignada = parseInt(localStorage.getItem('sp_patrulla_pendiente')) || null;
+        const patrullaAsignada = parseInt(localStorage.getItem('sp_patrulla_pendiente')) || getCurrentPatrulla() || null;
         localStorage.removeItem('sp_patrulla_pendiente');
         if (patrullaAsignada) entry._patrulla = patrullaAsignada;
         const caso = { id: genId(), label: nombreExp, patrulla: patrullaAsignada, fechaCreacion: entry._fecha, creadoPor: entry['cont-titulo'] || entry['cont-nro'] || '', completado: {} };
@@ -475,7 +475,7 @@
   function populateCasoSelector(tipo) {
     const sel = document.getElementById(`${tipo}-caso`);
     if (!sel) return;
-    const casos = getCasos();
+    const casos = getCasosFiltered();
     const pasoIdx = PASOS.indexOf(tipo);
 
     sel.innerHTML = '<option value="">Seleccione un Expediente...</option>';
@@ -640,7 +640,7 @@
   // ---------- EXPEDIENTES VIEW (accordion rows) ----------
   function renderExpedientes() {
     const container = document.getElementById('expedientes-list');
-    const casos = getCasos();
+    const casos = getCasosFiltered();
 
     if (!casos.length) {
       container.innerHTML = `
@@ -822,19 +822,28 @@
   function renderPatrulla() {
     const grid = document.getElementById('patrulla-buttons');
     const list = document.getElementById('patrulla-exp-list');
-    const casos = getCasos();
+    const allCasos = getCasos();
+    const pat = getCurrentPatrulla();
+
+    // If patrol user, auto-select their patrol
+    if (pat && !_patrullaActiva) {
+      _patrullaActiva = pat;
+      renderPatrulla();
+      return;
+    }
 
     // Count expedientes per patrulla
     const counts = {};
     for (let n = 1; n <= 7; n++) {
-      counts[n] = casos.filter(c => c.patrulla === n).length;
+      counts[n] = allCasos.filter(c => c.patrulla === n).length;
     }
 
     if (!_patrullaActiva) {
       grid.style.display = '';
       list.style.display = 'none';
-      grid.innerHTML = Array.from({ length: 7 }, (_, i) => {
-        const n = i + 1;
+      // Admin sees all 7, patrol user sees only their number
+      const range = pat ? [pat] : [1, 2, 3, 4, 5, 6, 7];
+      grid.innerHTML = range.map(n => {
         return `<button class="patrulla-btn" data-patrulla="${n}" data-num="${n}">
           <span class="pat-num">${n}</span>
           <span class="pat-count">${counts[n]} exp.</span>
@@ -853,7 +862,7 @@
       const p = _patrullaActiva;
       document.getElementById('patrulla-title').textContent = `Patrulla N° ${p}`;
       const body = document.getElementById('patrulla-exp-body');
-      const filtered = casos.filter(c => c.patrulla === p);
+      const filtered = allCasos.filter(c => c.patrulla === p);
       if (!filtered.length) {
         body.innerHTML = `<div class="expediente-empty" style="padding:30px">
           <i class="fas fa-gauge-high" style="font-size:2rem"></i>
@@ -972,10 +981,13 @@
 
   function getAllData() {
     const all = [];
+    const pat = getCurrentPatrulla();
     Object.keys(STORE).forEach(tipo => {
       const items = getData(STORE[tipo]);
       items.forEach(item => {
-        all.push({ ...item, _tipo: tipo, _tipoLabel: TIPO_LABEL[tipo] });
+        if (!pat || item._patrulla === pat) {
+          all.push({ ...item, _tipo: tipo, _tipoLabel: TIPO_LABEL[tipo] });
+        }
       });
     });
     return all;
@@ -1014,7 +1026,7 @@
     const counts = { contacto: 0, diligencia: 0, vigilancia: 0, reconocimiento: 0, seguridad: 0 };
     allData.forEach(d => { if (counts[d._tipo] !== undefined) counts[d._tipo]++; });
 
-    const casos = getCasos();
+    const casos = getCasosFiltered();
     const totalCasos = casos.length;
     const finalizados = casos.filter(c => {
       const comp = c.completado || {};
@@ -1035,6 +1047,13 @@
     document.getElementById('count-reconocimiento').textContent = counts.reconocimiento;
     document.getElementById('count-seguridad').textContent = counts.seguridad;
     drawCharts(allData, counts);
+
+    // User management visibility
+    const userMgmt = document.getElementById('userManagement');
+    if (userMgmt) {
+      userMgmt.style.display = isAdmin() ? '' : 'none';
+      if (isAdmin()) renderUsersTable();
+    }
   }
 
   function drawCharts(allData, counts) {
@@ -1063,6 +1082,152 @@
     });
   }
 
+  // ---------- USER MANAGEMENT (admin) ----------
+  function renderUsersTable() {
+    const tbody = document.getElementById('usersTableBody');
+    if (!tbody) return;
+    const users = getUsers();
+    tbody.innerHTML = users.map(u => {
+      const role = u.isAdmin ? 'Administrador' : (u.patrulla ? `Patrulla N° ${u.patrulla}` : 'Usuario');
+      return `<tr>
+        <td><strong>${u.user}</strong></td>
+        <td>${role}</td>
+        <td>${u.patrulla ? `P-${u.patrulla}` : '-'}</td>
+        <td style="white-space:nowrap">
+          ${u.isAdmin ? '' : `
+            <button class="btn-user-edit" data-user="${u.user}" title="Editar usuario"><i class="fas fa-pen"></i></button>
+            <button class="btn-user-reset" data-user="${u.user}" title="Restablecer contraseña"><i class="fas fa-key"></i></button>
+            <button class="btn-user-delete" data-user="${u.user}" title="Eliminar usuario"><i class="fas fa-trash"></i></button>
+          `}
+        </td>
+      </tr>`;
+    }).join('');
+
+    // Reset password
+    tbody.querySelectorAll('.btn-user-reset').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const username = btn.dataset.user;
+        const newPass = prompt(`Nueva contraseña para "${username}":`);
+        if (newPass && newPass.trim().length >= 4) {
+          const users = getUsers();
+          const u = users.find(x => x.user === username);
+          if (u) {
+            u.pass = newPass.trim();
+            setUsers(users);
+            alert(`Contraseña de "${username}" actualizada.`);
+          }
+        } else if (newPass) {
+          alert('La contraseña debe tener al menos 4 caracteres.');
+        }
+      });
+    });
+
+    // Edit user
+    tbody.querySelectorAll('.btn-user-edit').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const username = btn.dataset.user;
+        const users = getUsers();
+        const u = users.find(x => x.user === username);
+        if (u) showUserModal(u);
+      });
+    });
+
+    // Delete user
+    tbody.querySelectorAll('.btn-user-delete').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const username = btn.dataset.user;
+        if (!confirm(`¿Eliminar al usuario "${username}"? No se puede deshacer.`)) return;
+        let users = getUsers();
+        users = users.filter(u => u.user !== username);
+        setUsers(users);
+        renderUsersTable();
+      });
+    });
+  }
+
+  document.getElementById('btnAddUser')?.addEventListener('click', () => {
+    showUserModal();
+  });
+
+  function showUserModal(userToEdit) {
+    const existing = document.getElementById('userMgmtModal');
+    if (existing) existing.remove();
+
+    const isEdit = !!userToEdit;
+    const div = document.createElement('div');
+    div.id = 'userMgmtModal';
+    div.className = 'user-mgmt-modal';
+    div.innerHTML = `
+      <div class="user-mgmt-modal-box">
+        <h3><i class="fas ${isEdit ? 'fa-user-pen' : 'fa-user-plus'}"></i> ${isEdit ? 'Editar Usuario' : 'Nuevo Usuario'}</h3>
+        <div class="form-group">
+          <label for="umUser">Usuario</label>
+          <input type="text" id="umUser" value="${isEdit ? userToEdit.user : ''}" ${isEdit ? 'readonly' : ''} style="${isEdit ? 'background:#f5f5f5;color:#999' : ''}">
+        </div>
+        <div class="form-group">
+          <label for="umPass">Contraseña</label>
+          <input type="password" id="umPass" placeholder="${isEdit ? 'Dejar vacío para mantener la actual' : 'Contraseña'}" ${isEdit ? '' : 'required'}>
+        </div>
+        <div class="form-group">
+          <label for="umPassConfirm">Confirmar Contraseña</label>
+          <input type="password" id="umPassConfirm" placeholder="Repita la contraseña">
+        </div>
+        <div class="form-group">
+          <label for="umPatrulla">Patrulla (opcional)</label>
+          <select id="umPatrulla">
+            <option value="">Sin patrulla</option>
+            ${Array.from({length: 7}, (_, i) => {
+              const n = i + 1;
+              const sel = isEdit && userToEdit.patrulla === n ? 'selected' : '';
+              return `<option value="${n}" ${sel}>Patrulla N° ${n}</option>`;
+            }).join('')}
+          </select>
+        </div>
+        <div id="umError" class="login-error hidden"><i class="fas fa-exclamation-circle"></i> <span id="umErrorMsg"></span></div>
+        <div class="form-actions">
+          <button id="umSaveBtn" class="btn-primary"><i class="fas fa-save"></i> ${isEdit ? 'Guardar Cambios' : 'Crear Usuario'}</button>
+          <button id="umCancelBtn" class="btn-secondary"><i class="fas fa-times"></i> Cancelar</button>
+        </div>
+      </div>`;
+    document.body.appendChild(div);
+
+    document.getElementById('umCancelBtn').addEventListener('click', () => div.remove());
+    div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+    document.getElementById('umSaveBtn').addEventListener('click', () => {
+      const user = document.getElementById('umUser').value.trim();
+      const pass = document.getElementById('umPass').value;
+      const confirm = document.getElementById('umPassConfirm').value;
+      const patrulla = document.getElementById('umPatrulla').value ? parseInt(document.getElementById('umPatrulla').value) : null;
+      const errEl = document.getElementById('umError');
+      const errMsg = document.getElementById('umErrorMsg');
+      errEl.classList.add('hidden');
+
+      if (!user) { errMsg.textContent = 'El nombre de usuario es obligatorio.'; errEl.classList.remove('hidden'); return; }
+
+      if (isEdit) {
+        const users = getUsers();
+        const u = users.find(x => x.user === userToEdit.user);
+        if (!u) return;
+        if (pass) {
+          if (pass.length < 4) { errMsg.textContent = 'La contraseña debe tener al menos 4 caracteres.'; errEl.classList.remove('hidden'); return; }
+          if (pass !== confirm) { errMsg.textContent = 'Las contraseñas no coinciden.'; errEl.classList.remove('hidden'); return; }
+          u.pass = pass;
+        }
+        u.patrulla = patrulla;
+        setUsers(users);
+        alert(`Usuario "${user}" actualizado.`);
+      } else {
+        if (!pass || pass.length < 4) { errMsg.textContent = 'La contraseña debe tener al menos 4 caracteres.'; errEl.classList.remove('hidden'); return; }
+        if (pass !== confirm) { errMsg.textContent = 'Las contraseñas no coinciden.'; errEl.classList.remove('hidden'); return; }
+        if (userExists(user)) { errMsg.textContent = 'El usuario ya existe.'; errEl.classList.remove('hidden'); return; }
+        addUser(user, pass, patrulla);
+        alert(`Usuario "${user}" creado.`);
+      }
+      div.remove();
+      renderUsersTable();
+    });
+  }
+
   // ---------- CRONOLÓGICO POR N° (con filtro) ----------
   let _cronoFiltro = 'todos';
 
@@ -1081,14 +1246,14 @@
     // Filter data
     let filtered = allData;
     if (_cronoFiltro === 'pendientes') {
-      const casos = getCasos();
+      const casos = getCasosFiltered();
       const pendIds = new Set(casos.filter(c => {
         const comp = c.completado || {};
         return comp['seguridad'] && comp['seguridad'].pendiente;
       }).map(c => c.id));
       filtered = allData.filter(d => pendIds.has(d._casoId));
     } else if (_cronoFiltro === 'finalizados') {
-      const casos = getCasos();
+      const casos = getCasosFiltered();
       const finIds = new Set(casos.filter(c => {
         const comp = c.completado || {};
         const segOk = comp['seguridad'] && !comp['seguridad'].pendiente;

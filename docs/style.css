@@ -619,6 +619,25 @@ html, body {
   transform: translateY(-1px);
 }
 
+.btn-edit {
+  padding: 6px 14px;
+  background: linear-gradient(135deg, var(--warning) 0%, #e65100 100%);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: .8rem;
+  transition: all .2s;
+  font-family: inherit;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+.btn-edit:hover {
+  box-shadow: 0 3px 10px rgba(245,127,23,.3);
+  transform: translateY(-1px);
+}
+
 .btn-delete {
   padding: 6px 14px;
   background: linear-gradient(135deg, var(--danger) 0%, #b71c1c 100%);

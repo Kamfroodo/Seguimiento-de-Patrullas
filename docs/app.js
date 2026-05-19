@@ -273,6 +273,56 @@
       if (sectionId === t) populateCasoSelector(t);
     });
 
+    // Fill form if editing, otherwise reset
+    if (sectionId === 'contacto' || sectionId === 'reconocimiento' || sectionId === 'vigilancia' || sectionId === 'seguridad') {
+      const hasEdit = sessionStorage.getItem('sp_edit_id') && sessionStorage.getItem('sp_edit_tipo') === sectionId;
+      if (hasEdit) {
+        fillFormForEdit(sectionId);
+      } else {
+        const form = document.getElementById('form' + sectionId.charAt(0).toUpperCase() + sectionId.slice(1));
+        if (form) form.reset();
+      }
+    }
+    if (sectionId === 'diligencia') {
+      const hasEdit = sessionStorage.getItem('sp_edit_id') && sessionStorage.getItem('sp_edit_tipo') === 'diligencia';
+      if (hasEdit) {
+        fillFormForEditDiligencia();
+      } else {
+        // Reset diligencia form
+        const form = document.getElementById('formDiligencia');
+        if (form) form.reset();
+        document.getElementById('diligencia-caso').value = '';
+        const container = document.getElementById('dil-items-container');
+        if (container) {
+          container.innerHTML = `
+            <div class="dil-item">
+              <div class="item-header">
+                <span class="item-num">Archivo #1</span>
+                <button type="button" class="btn-remove-item" title="Eliminar este archivo" style="display:none"><i class="fas fa-times"></i></button>
+              </div>
+              <div class="form-group">
+                <label>Título</label>
+                <input type="text" name="dil-titulo" placeholder="Título de la diligencia" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label>N°</label>
+                  <input type="text" name="dil-nro" placeholder="Número de caso / radicado" required>
+                </div>
+                <div class="form-group">
+                  <label>Fecha</label>
+                  <input type="date" name="dil-fecha" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Descripción</label>
+                <textarea name="dil-descripcion" rows="3" placeholder="Describa los detalles de la diligencia..." required></textarea>
+              </div>
+            </div>`;
+        }
+      }
+    }
+
     if (window.innerWidth <= 768) sidebar.classList.remove('open');
   }
 
@@ -376,6 +426,89 @@
     if (e.target === modalPreview) modalPreview.classList.add('hidden');
   });
 
+  // ---------- EDIT HELPERS ----------
+  function fillFormForEdit(tipo) {
+    const editId = sessionStorage.getItem('sp_edit_id');
+    const editTipo = sessionStorage.getItem('sp_edit_tipo');
+    if (!editId || editTipo !== tipo) return;
+
+    const records = getData(STORE[tipo]);
+    const record = records.find(r => r.id === editId);
+    if (!record) return;
+
+    const prefixMap = { contacto: 'cont', reconocimiento: 'rec', vigilancia: 'vig', seguridad: 'seg' };
+    const prefix = prefixMap[tipo];
+    if (!prefix) return;
+
+    const form = document.getElementById('form' + tipo.charAt(0).toUpperCase() + tipo.slice(1));
+    if (!form) return;
+
+    // Set caso selector
+    const casoId = sessionStorage.getItem('sp_edit_caso');
+    const sel = document.getElementById(`${tipo}-caso`);
+    if (sel && casoId) sel.value = casoId;
+
+    // Set form fields
+    const fieldMap = [`${prefix}-titulo`, `${prefix}-nro`, `${prefix}-descripcion`];
+    fieldMap.forEach(fn => {
+      const el = form.querySelector(`[name="${fn}"], #${fn}`);
+      if (el && record[fn]) el.value = record[fn];
+    });
+
+    // Set date
+    const fechaEl = form.querySelector(`#${prefix}-fecha`);
+    if (fechaEl && record._fecha) fechaEl.value = record._fecha;
+
+    // For contacto, set expediente name
+    if (tipo === 'contacto') {
+      const expName = document.getElementById('cont-exp-nombre');
+      if (expName && record['cont-exp-nombre']) expName.value = record['cont-exp-nombre'];
+    }
+  }
+
+  function fillFormForEditDiligencia() {
+    const editId = sessionStorage.getItem('sp_edit_id');
+    const editTipo = sessionStorage.getItem('sp_edit_tipo');
+    if (!editId || editTipo !== 'diligencia') return;
+
+    const records = getData(STORE.diligencia);
+    const record = records.find(r => r.id === editId);
+    if (!record) return;
+
+    const casoId = sessionStorage.getItem('sp_edit_caso');
+    const sel = document.getElementById('diligencia-caso');
+    if (sel && casoId) sel.value = casoId;
+
+    const container = document.getElementById('dil-items-container');
+    container.innerHTML = '';
+    const div = document.createElement('div');
+    div.className = 'dil-item';
+    div.innerHTML = `
+      <div class="item-header">
+        <span class="item-num">Archivo #1</span>
+        <button type="button" class="btn-remove-item" title="Eliminar este archivo" style="display:none"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="form-group">
+        <label>Título</label>
+        <input type="text" name="dil-titulo" placeholder="Título de la diligencia" required value="${(record['dil-titulo'] || '').replace(/"/g, '&quot;')}">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>N°</label>
+          <input type="text" name="dil-nro" placeholder="Número de caso / radicado" required value="${(record['dil-nro'] || '').replace(/"/g, '&quot;')}">
+        </div>
+        <div class="form-group">
+          <label>Fecha</label>
+          <input type="date" name="dil-fecha" required value="${record._fecha || record['dil-fecha'] || ''}">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Descripción</label>
+        <textarea name="dil-descripcion" rows="3" placeholder="Describa los detalles de la diligencia..." required>${(record['dil-descripcion'] || '').replace(/"/g, '&quot;')}</textarea>
+      </div>`;
+    container.appendChild(div);
+  }
+
   // ---------- FORMS ----------
   function setupForm(formId, storeKey, tipo) {
     const form = document.getElementById(formId);
@@ -386,8 +519,10 @@
 
     form.addEventListener('submit', e => {
       e.preventDefault();
-      const fd = new FormData(form);
-      const entry = { id: genId(), _fecha: fechaField?.value || today(), _hora: horaField?.value || '' };
+      const editId = sessionStorage.getItem('sp_edit_id');
+      const editTipo = sessionStorage.getItem('sp_edit_tipo');
+      const isEditing = editId && editTipo === tipo;
+      const entry = { id: isEditing ? editId : genId(), _fecha: fechaField?.value || today(), _hora: horaField?.value || '' };
 
       fd.forEach((value, key) => {
         if (value && value.trim) value = value.trim();
@@ -397,24 +532,35 @@
       // Handle case linking
       const casoId = entry[tipo + '-caso'];
       if (tipo === 'contacto') {
-        // Create new case
-        const nombreExp = entry['cont-exp-nombre'] || entry['cont-titulo'] || entry['cont-nro'] || shortId();
-        const patrullaAsignada = parseInt(localStorage.getItem('sp_patrulla_pendiente')) || getCurrentPatrulla() || null;
-        localStorage.removeItem('sp_patrulla_pendiente');
-        if (patrullaAsignada) entry._patrulla = patrullaAsignada;
-        const caso = { id: genId(), label: nombreExp, patrulla: patrullaAsignada, fechaCreacion: entry._fecha, creadoPor: entry['cont-titulo'] || entry['cont-nro'] || '', completado: {} };
-        let casos = getCasos();
-        casos.unshift(caso);
-        setCasos(casos);
-        entry._casoId = caso.id;
-        entry._casoLabel = caso.label;
-        // Update case with contacto ref
-        caso.completado[tipo] = { id: entry.id, fecha: entry._fecha };
-        casos = getCasos();
-        const idx = casos.findIndex(c => c.id === caso.id);
-        if (idx !== -1) casos[idx] = caso;
-        setCasos(casos);
-        showModal('Expediente Creado', `Nuevo expediente "${caso.label}" creado. Pasando al paso 2...`, NEXT_STEP[tipo]);
+        if (isEditing) {
+          // Edit existing contacto — don't create new case
+          const casos = getCasos();
+          const casoEdit = casoId ? casos.find(c => c.id === casoId) : null;
+          if (casoEdit) {
+            entry._casoId = casoEdit.id;
+            entry._casoLabel = casoEdit.label;
+            if (casoEdit.patrulla) entry._patrulla = casoEdit.patrulla;
+          }
+          showModal('Informe Actualizado', 'El informe de contacto se ha actualizado.', null);
+        } else {
+          // Create new case
+          const nombreExp = entry['cont-exp-nombre'] || entry['cont-titulo'] || entry['cont-nro'] || shortId();
+          const patrullaAsignada = parseInt(localStorage.getItem('sp_patrulla_pendiente')) || getCurrentPatrulla() || null;
+          localStorage.removeItem('sp_patrulla_pendiente');
+          if (patrullaAsignada) entry._patrulla = patrullaAsignada;
+          const caso = { id: genId(), label: nombreExp, patrulla: patrullaAsignada, fechaCreacion: entry._fecha, creadoPor: entry['cont-titulo'] || entry['cont-nro'] || '', completado: {} };
+          let casos = getCasos();
+          casos.unshift(caso);
+          setCasos(casos);
+          entry._casoId = caso.id;
+          entry._casoLabel = caso.label;
+          caso.completado[tipo] = { id: entry.id, fecha: entry._fecha };
+          casos = getCasos();
+          const idx = casos.findIndex(c => c.id === caso.id);
+          if (idx !== -1) casos[idx] = caso;
+          setCasos(casos);
+          showModal('Expediente Creado', `Nuevo expediente "${caso.label}" creado. Pasando al paso 2...`, NEXT_STEP[tipo]);
+        }
       } else if (casoId) {
         entry._casoId = casoId;
         const casos = getCasos();
@@ -422,20 +568,32 @@
         if (caso) {
           entry._casoLabel = caso.label;
           if (caso.patrulla) entry._patrulla = caso.patrulla;
-          caso.completado = caso.completado || {};
-          caso.completado[tipo] = { id: entry.id, fecha: entry._fecha };
-          const idx = casos.findIndex(c => c.id === casoId);
-          if (idx !== -1) casos[idx] = caso;
-          setCasos(casos);
+          if (!isEditing) {
+            caso.completado = caso.completado || {};
+            caso.completado[tipo] = { id: entry.id, fecha: entry._fecha };
+            const idx = casos.findIndex(c => c.id === casoId);
+            if (idx !== -1) casos[idx] = caso;
+            setCasos(casos);
+          }
         }
-        showModal('Informe Guardado', `Informe vinculado al expediente "${entry._casoLabel || casoId}".`, NEXT_STEP[tipo]);
+        showModal(isEditing ? 'Informe Actualizado' : 'Informe Guardado', `Informe ${isEditing ? 'actualizado' : 'vinculado'} al expediente "${entry._casoLabel || casoId}".`, isEditing ? null : NEXT_STEP[tipo]);
       } else {
         showModal('Informe Guardado', 'Informe guardado sin vincular a expediente.', null);
       }
 
       const records = getData(storeKey);
-      records.push(entry);
+      if (isEditing) {
+        const idx = records.findIndex(r => r.id === editId);
+        if (idx !== -1) records[idx] = entry;
+        else records.push(entry);
+      } else {
+        records.push(entry);
+      }
       setData(storeKey, records);
+
+      sessionStorage.removeItem('sp_edit_id');
+      sessionStorage.removeItem('sp_edit_tipo');
+      sessionStorage.removeItem('sp_edit_caso');
 
       form.reset();
       if (tipo !== 'contacto' && document.getElementById(`${tipo}-caso`)) {
@@ -573,6 +731,9 @@
 
     form.addEventListener('submit', e => {
       e.preventDefault();
+      const editId = sessionStorage.getItem('sp_edit_id');
+      const editTipo = sessionStorage.getItem('sp_edit_tipo');
+      const isEditing = editId && editTipo === 'diligencia';
       const casoId = document.getElementById('diligencia-caso').value;
       if (!casoId) { alert('Debe seleccionar un Expediente.'); return; }
 
@@ -586,7 +747,7 @@
         const descripcion = item.querySelector('[name="dil-descripcion"]')?.value?.trim();
         if (titulo && nro && fecha) {
           batch.push({
-            id: genId(),
+            id: isEditing && batch.length === 0 ? editId : genId(),
             'dil-titulo': titulo,
             'dil-nro': nro,
             'dil-fecha': fecha,
@@ -606,26 +767,43 @@
       const caso = casos.find(c => c.id === casoId);
       const label = caso ? caso.label : casoId;
 
-      batch.forEach(entry => {
+      if (isEditing) {
+        // Replace existing record
+        const existingIdx = records.findIndex(r => r.id === editId);
+        const newRecord = batch[0];
         if (caso) {
-          entry._casoLabel = caso.label;
-          if (caso.patrulla) entry._patrulla = caso.patrulla;
+          newRecord._casoLabel = caso.label;
+          if (caso.patrulla) newRecord._patrulla = caso.patrulla;
         }
-        records.push(entry);
-      });
+        if (existingIdx !== -1) records[existingIdx] = newRecord;
+        else records.push(newRecord);
+      } else {
+        batch.forEach(entry => {
+          if (caso) {
+            entry._casoLabel = caso.label;
+            if (caso.patrulla) entry._patrulla = caso.patrulla;
+          }
+          records.push(entry);
+        });
 
-      // Update caso with latest diligencia ref
-      if (caso) {
-        caso.completado = caso.completado || {};
-        const last = batch[batch.length - 1];
-        caso.completado.diligencia = { id: last.id, fecha: last._fecha };
-        const idx = casos.findIndex(c => c.id === casoId);
-        if (idx !== -1) casos[idx] = caso;
-        setCasos(casos);
+        // Update caso with latest diligencia ref
+        if (caso) {
+          caso.completado = caso.completado || {};
+          const last = batch[batch.length - 1];
+          caso.completado.diligencia = { id: last.id, fecha: last._fecha };
+          const idx = casos.findIndex(c => c.id === casoId);
+          if (idx !== -1) casos[idx] = caso;
+          setCasos(casos);
+        }
       }
 
       setData(STORE.diligencia, records);
-      showModal('Informes Guardados', `${batch.length} archivo(s) guardado(s) en "${label}". Pasando al paso 3...`, NEXT_STEP.diligencia);
+
+      sessionStorage.removeItem('sp_edit_id');
+      sessionStorage.removeItem('sp_edit_tipo');
+      sessionStorage.removeItem('sp_edit_caso');
+
+      showModal(isEditing ? 'Informe Actualizado' : 'Informes Guardados', `${batch.length} archivo(s) ${isEditing ? 'actualizado(s)' : 'guardado(s)'} en "${label}".`, isEditing ? null : NEXT_STEP.diligencia);
 
       form.reset();
       document.getElementById('diligencia-caso').value = casoId;
@@ -707,10 +885,12 @@
                   detail = count > 1
                     ? `${count} archivos — Último: #${done.id} (${formatDate(done.fecha)})`
                     : `#${done.id} — ${formatDate(done.fecha)}`;
-                  btnHtml = `<button class="btn-view" data-tipo="${p}" data-id="${done.id}"><i class="fas fa-eye"></i> Ver último</button>`;
+                  btnHtml = `<button class="btn-view" data-tipo="${p}" data-id="${done.id}"><i class="fas fa-eye"></i> Ver último</button>
+                  <button class="btn-edit" data-tipo="${p}" data-id="${done.id}" data-caso="${c.id}"><i class="fas fa-pen"></i> Editar</button>`;
                 } else {
                   detail = `#${done.id} — ${formatDate(done.fecha)}`;
-                  btnHtml = `<button class="btn-view" data-tipo="${p}" data-id="${done.id}"><i class="fas fa-eye"></i> Ver</button>`;
+                  btnHtml = `<button class="btn-view" data-tipo="${p}" data-id="${done.id}"><i class="fas fa-eye"></i> Ver</button>
+                  <button class="btn-edit" data-tipo="${p}" data-id="${done.id}" data-caso="${c.id}"><i class="fas fa-pen"></i> Editar</button>`;
                 }
               } else if (isPendiente) {
                 indicatorClass = 'pending';
@@ -812,6 +992,20 @@
         const records = getData(STORE[tipo]);
         const record = records.find(r => r.id === id);
         if (record) showPreview(record, tipo);
+      });
+    });
+
+    // Attach edit listeners
+    container.querySelectorAll('.btn-edit').forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.stopPropagation();
+        const tipo = btn.dataset.tipo;
+        const id = btn.dataset.id;
+        const casoId = btn.dataset.caso;
+        sessionStorage.setItem('sp_edit_id', id);
+        sessionStorage.setItem('sp_edit_tipo', tipo);
+        sessionStorage.setItem('sp_edit_caso', casoId);
+        navigateTo(tipo);
       });
     });
   }

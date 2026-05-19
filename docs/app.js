@@ -14,13 +14,28 @@
 
   function initUsers() {
     let users = getUsers();
-    if (users.length === 0) {
-      users = [{ user: 'SECCION I', pass: 'SECCI2026', isAdmin: true }];
-      for (let n = 1; n <= 7; n++) {
-        users.push({ user: String(n), pass: 'secci2026', isAdmin: false, patrulla: n });
-      }
-      setUsers(users);
+    let changed = false;
+
+    // Ensure admin exists
+    if (!users.some(u => u.user === 'SECCION I')) {
+      users.push({ user: 'SECCION I', pass: 'SECCI2026', isAdmin: true });
+      changed = true;
     }
+
+    // Ensure patrol users 1-7 exist
+    for (let n = 1; n <= 7; n++) {
+      const existing = users.find(u => u.user === String(n));
+      if (!existing) {
+        users.push({ user: String(n), pass: 'secci2026', isAdmin: false, patrulla: n });
+        changed = true;
+      } else if (!existing.patrulla) {
+        // Fix: ensure patrol number is set
+        existing.patrulla = n;
+        changed = true;
+      }
+    }
+
+    if (changed) setUsers(users);
   }
 
   function addUser(user, pass, patrulla) {

@@ -48,6 +48,32 @@
           <i class="fas fa-arrow-right-to-bracket"></i> Ingresar
         </button>
       </form>
+      <div class="login-register-link">
+        <button id="btnToggleRegister" class="btn-link"><i class="fas fa-user-plus"></i> Crear nuevo usuario</button>
+      </div>
+      <div id="registerSection" class="register-section hidden">
+        <div class="register-divider"><span>REGISTRO</span></div>
+        <form id="registerForm" class="login-form" autocomplete="off">
+          <div class="login-field">
+            <label for="regUser"><i class="fas fa-user-astronaut"></i> Nuevo Usuario</label>
+            <input type="text" id="regUser" placeholder="Nombre de usuario" required>
+          </div>
+          <div class="login-field">
+            <label for="regPass"><i class="fas fa-fingerprint"></i> Contraseña</label>
+            <input type="password" id="regPass" placeholder="Contraseña" required>
+          </div>
+          <div class="login-field">
+            <label for="regPassConfirm"><i class="fas fa-check-circle"></i> Confirmar Contraseña</label>
+            <input type="password" id="regPassConfirm" placeholder="Repita la contraseña" required>
+          </div>
+          <div id="registerError" class="login-error hidden">
+            <i class="fas fa-exclamation-circle"></i> <span id="registerErrorMsg">Error</span>
+          </div>
+          <button type="submit" class="btn-login btn-register">
+            <i class="fas fa-user-check"></i> Crear Usuario
+          </button>
+        </form>
+      </div>
     </div>
   </div>
 

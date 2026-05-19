@@ -2,7 +2,41 @@
   'use strict';
 
   // ---------- LOGIN / AUTH ----------
-  const CREDENTIALS = { user: 'SECCION I', pass: 'SECCI2026' };
+  const USERS_KEY = 'sp_users';
+
+  function getUsers() {
+    try { return JSON.parse(localStorage.getItem(USERS_KEY)) || []; } catch { return []; }
+  }
+
+  function setUsers(list) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(list));
+  }
+
+  function initUsers() {
+    let users = getUsers();
+    if (users.length === 0) {
+      users = [{ user: 'SECCION I', pass: 'SECCI2026', isAdmin: true }];
+      setUsers(users);
+    }
+  }
+
+  function addUser(user, pass) {
+    const users = getUsers();
+    users.push({ user, pass, isAdmin: false });
+    setUsers(users);
+  }
+
+  function validateUser(user, pass) {
+    const users = getUsers();
+    return users.some(u => u.user === user && u.pass === pass);
+  }
+
+  function userExists(user) {
+    const users = getUsers();
+    return users.some(u => u.user === user);
+  }
+
+  initUsers();
 
   function checkAuth() {
     const loggedIn = sessionStorage.getItem('sp_logged_in');
@@ -24,7 +58,7 @@
     const pass = document.getElementById('loginPass').value;
     const errEl = document.getElementById('loginError');
 
-    if (user === CREDENTIALS.user && pass === CREDENTIALS.pass) {
+    if (validateUser(user, pass)) {
       sessionStorage.setItem('sp_logged_in', '1');
       document.getElementById('loginScreen').style.display = 'none';
       document.getElementById('appContainer').style.display = '';
@@ -39,6 +73,65 @@
   document.getElementById('btnLogout').addEventListener('click', function () {
     sessionStorage.removeItem('sp_logged_in');
     location.reload();
+  });
+
+  // ---------- REGISTER ----------
+  document.getElementById('btnToggleRegister').addEventListener('click', function () {
+    const section = document.getElementById('registerSection');
+    section.classList.toggle('hidden');
+    document.getElementById('registerError').classList.add('hidden');
+  });
+
+  document.getElementById('registerForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+    const user = document.getElementById('regUser').value.trim();
+    const pass = document.getElementById('regPass').value;
+    const confirm = document.getElementById('regPassConfirm').value;
+    const errEl = document.getElementById('registerError');
+    const errMsg = document.getElementById('registerErrorMsg');
+
+    errEl.classList.add('hidden');
+
+    if (!user || !pass || !confirm) {
+      errMsg.textContent = 'Todos los campos son obligatorios.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    if (pass !== confirm) {
+      errMsg.textContent = 'Las contraseñas no coinciden.';
+      errEl.classList.remove('hidden');
+      document.getElementById('regPass').value = '';
+      document.getElementById('regPassConfirm').value = '';
+      document.getElementById('regPass').focus();
+      return;
+    }
+
+    if (pass.length < 4) {
+      errMsg.textContent = 'La contraseña debe tener al menos 4 caracteres.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    if (userExists(user)) {
+      errMsg.textContent = 'El usuario ya existe.';
+      errEl.classList.remove('hidden');
+      return;
+    }
+
+    addUser(user, pass);
+
+    // Auto-fill login form
+    document.getElementById('loginUser').value = user;
+    document.getElementById('loginPass').value = '';
+
+    document.getElementById('registerSection').classList.add('hidden');
+    document.getElementById('regUser').value = '';
+    document.getElementById('regPass').value = '';
+    document.getElementById('regPassConfirm').value = '';
+    document.getElementById('loginPass').focus();
+
+    alert(`Usuario "${user}" creado exitosamente. Ahora puede iniciar sesión.`);
   });
 
   // ---------- CONSTANTS ----------

@@ -112,6 +112,7 @@
         <h1 id="sectionTitle">Expedientes</h1>
         <div class="topbar-right">
           <span id="clock"></span>
+          <button id="btnUserMgmt" class="btn-user-mgmt-top" title="Gestión de Usuarios"><i class="fas fa-users-gear"></i></button>
           <button id="btnLogout" class="btn-logout" title="Cerrar Sesión"><i class="fas fa-sign-out-alt"></i></button>
         </div>
       </header>
@@ -518,34 +519,6 @@
             <div class="chart-box full-width">
               <h3><i class="fas fa-chart-bar"></i> Informes por Tipo</h3>
               <canvas id="chartTipo"></canvas>
-            </div>
-          </div>
-          <!-- USER MANAGEMENT (admin only) -->
-          <div id="userManagement" class="user-mgmt" style="display:none">
-            <div class="form-container" style="margin-top:24px">
-              <div class="form-header">
-                <i class="fas fa-users-gear"></i>
-                <div>
-                  <h2>Gestión de Usuarios</h2>
-                  <span class="form-subtitle">Administrar usuarios del sistema</span>
-                </div>
-              </div>
-              <div id="usersTableContainer" class="table-container">
-                <table class="data-table" id="usersTable">
-                  <thead>
-                    <tr>
-                      <th>Usuario</th>
-                      <th>Rol</th>
-                      <th>Patrulla</th>
-                      <th>Acciones</th>
-                    </tr>
-                  </thead>
-                  <tbody id="usersTableBody"></tbody>
-                </table>
-              </div>
-              <div class="form-actions">
-                <button id="btnAddUser" class="btn-primary"><i class="fas fa-user-plus"></i> Agregar Usuario</button>
-              </div>
             </div>
           </div>
         </section>

@@ -120,6 +120,11 @@
     if (btnExport) {
       btnExport.style.display = admin ? '' : 'none';
     }
+    // User management button in topbar (admin only)
+    const btnUserMgmt = document.getElementById('btnUserMgmt');
+    if (btnUserMgmt) {
+      btnUserMgmt.style.display = admin ? '' : 'none';
+    }
   }
 
   // ---------- CONSTANTS ----------
@@ -1042,13 +1047,6 @@
     document.getElementById('count-reconocimiento').textContent = counts.reconocimiento;
     document.getElementById('count-seguridad').textContent = counts.seguridad;
     drawCharts(allData, counts);
-
-    // User management visibility
-    const userMgmt = document.getElementById('userManagement');
-    if (userMgmt) {
-      userMgmt.style.display = isAdmin() ? '' : 'none';
-      if (isAdmin()) renderUsersTable();
-    }
   }
 
   function drawCharts(allData, counts) {
@@ -1077,7 +1075,50 @@
     });
   }
 
-  // ---------- USER MANAGEMENT (admin) ----------
+  // ---------- USER MANAGEMENT (admin modal) ----------
+  function showUserMgmtModal() {
+    const existing = document.getElementById('userMgmtModal');
+    if (existing) { existing.remove(); return; }
+
+    const div = document.createElement('div');
+    div.id = 'userMgmtModal';
+    div.className = 'user-mgmt-modal';
+    div.innerHTML = `
+      <div class="user-mgmt-modal-box user-mgmt-modal-lg">
+        <div class="modal-header">
+          <i class="fas fa-users-gear" style="color:var(--primary)"></i>
+          <h3>Gestión de Usuarios</h3>
+          <button id="umCloseBtn" class="btn-close">&times;</button>
+        </div>
+        <div class="table-container">
+          <table class="data-table" id="usersTable">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Patrulla</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+        <div class="form-actions" style="border:none;padding-top:12px">
+          <button id="btnAddUser" class="btn-primary"><i class="fas fa-user-plus"></i> Agregar Usuario</button>
+        </div>
+      </div>`;
+    document.body.appendChild(div);
+
+    document.getElementById('umCloseBtn').addEventListener('click', () => div.remove());
+    div.addEventListener('click', e => { if (e.target === div) div.remove(); });
+
+    document.getElementById('btnAddUser').addEventListener('click', () => {
+      showUserFormModal(null, () => renderUsersTable());
+    });
+
+    renderUsersTable();
+  }
+
   function renderUsersTable() {
     const tbody = document.getElementById('usersTableBody');
     if (!tbody) return;
@@ -1098,7 +1139,6 @@
       </tr>`;
     }).join('');
 
-    // Reset password
     tbody.querySelectorAll('.btn-user-reset').forEach(btn => {
       btn.addEventListener('click', () => {
         const username = btn.dataset.user;
@@ -1106,28 +1146,20 @@
         if (newPass && newPass.trim().length >= 4) {
           const users = getUsers();
           const u = users.find(x => x.user === username);
-          if (u) {
-            u.pass = newPass.trim();
-            setUsers(users);
-            alert(`Contraseña de "${username}" actualizada.`);
-          }
-        } else if (newPass) {
-          alert('La contraseña debe tener al menos 4 caracteres.');
-        }
+          if (u) { u.pass = newPass.trim(); setUsers(users); alert(`Contraseña de "${username}" actualizada.`); }
+        } else if (newPass) { alert('La contraseña debe tener al menos 4 caracteres.'); }
       });
     });
 
-    // Edit user
     tbody.querySelectorAll('.btn-user-edit').forEach(btn => {
       btn.addEventListener('click', () => {
         const username = btn.dataset.user;
         const users = getUsers();
         const u = users.find(x => x.user === username);
-        if (u) showUserModal(u);
+        if (u) showUserFormModal(u, () => renderUsersTable());
       });
     });
 
-    // Delete user
     tbody.querySelectorAll('.btn-user-delete').forEach(btn => {
       btn.addEventListener('click', () => {
         const username = btn.dataset.user;
@@ -1140,17 +1172,13 @@
     });
   }
 
-  document.getElementById('btnAddUser')?.addEventListener('click', () => {
-    showUserModal();
-  });
-
-  function showUserModal(userToEdit) {
-    const existing = document.getElementById('userMgmtModal');
+  function showUserFormModal(userToEdit, onSave) {
+    const existing = document.getElementById('userFormModal');
     if (existing) existing.remove();
 
     const isEdit = !!userToEdit;
     const div = document.createElement('div');
-    div.id = 'userMgmtModal';
+    div.id = 'userFormModal';
     div.className = 'user-mgmt-modal';
     div.innerHTML = `
       <div class="user-mgmt-modal-box">
@@ -1219,9 +1247,11 @@
         alert(`Usuario "${user}" creado.`);
       }
       div.remove();
-      renderUsersTable();
+      if (onSave) onSave();
     });
   }
+
+  document.getElementById('btnUserMgmt')?.addEventListener('click', showUserMgmtModal);
 
   // ---------- CRONOLÓGICO POR N° (con filtro) ----------
   let _cronoFiltro = 'todos';

@@ -1578,12 +1578,7 @@ html, body {
 
 .hidden { display: none !important; }
 
-/* ========== USER MANAGEMENT ========== */
-.user-mgmt {
-  animation: fadeIn .3s ease;
-}
-
-.btn-user-edit, .btn-user-delete, .btn-user-reset {
+/* ========== USER MANAGEMENT MODAL ========== */
   background: none;
   border: none;
   cursor: pointer;
@@ -1673,6 +1668,28 @@ html, body {
   margin-top: 8px;
   border-top: 1px solid #f0f0f0;
   padding-top: 16px;
+}
+
+.user-mgmt-modal-box.user-mgmt-modal-lg {
+  min-width: 560px;
+  max-width: 700px;
+}
+
+.btn-user-mgmt-top {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #999;
+  cursor: pointer;
+  padding: 8px 10px;
+  border-radius: 8px;
+  transition: all .2s;
+  line-height: 1;
+}
+
+.btn-user-mgmt-top:hover {
+  color: var(--primary);
+  background: #e8eaf6;
 }
 
 .btn-login {

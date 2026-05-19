@@ -251,9 +251,11 @@
     if (sectionId === 'patrulla') renderPatrulla();
     if (sectionId === 'contacto') {
       const patPend = localStorage.getItem('sp_patrulla_pendiente');
+      const patLogin = getCurrentPatrulla();
+      const patrullaMostrar = patPend || (patLogin ? String(patLogin) : null);
       const infoBox = document.getElementById('cont-info-box');
-      if (patPend) {
-        infoBox.innerHTML = `<i class="fas fa-gauge-high"></i> <span>Creando expediente para <strong>Patrulla N° ${patPend}</strong>. Al guardar se creará un nuevo Expediente.</span>`;
+      if (patrullaMostrar) {
+        infoBox.innerHTML = `<i class="fas fa-gauge-high"></i> <span>Creando expediente para <strong>Patrulla N° ${patrullaMostrar}</strong>. Al guardar se creará un nuevo Expediente.</span>`;
       } else {
         infoBox.innerHTML = `<i class="fas fa-info-circle"></i> <span>Al guardar este informe se creará automáticamente un <strong>nuevo Expediente</strong>.</span>`;
       }
